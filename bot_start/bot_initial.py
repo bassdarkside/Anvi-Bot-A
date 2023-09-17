@@ -1,4 +1,5 @@
 import telebot
+import catalog
 
 
 # Function to read the token from a file
@@ -28,6 +29,18 @@ def handle_message(message):
     else:
         bot.send_message(message.from_user.id, "I don't "
                          "understand this command.")
+
+
+# Reply Buttons
+catalog.start()
+
+
+# Reply on Catalog button click
+catalog.check_reply()
+
+
+# Chapter -> Items (InlineButtons menu updating)
+catalog.callback_chapter()
 
 
 # Starting the bot
