@@ -113,7 +113,7 @@ def faq(faq_url):
     soup = get_soup(faq_url)
     faq = ""
     for data in faq_tags:
-        faq += f"\n{soup.select_one(data).get_text()}"
+        faq += f"{soup.select_one(data).get_text()}\n"
     write_data_to_file(faq.strip(), filename="faq.json", mode="w")
     return faq.strip()
 
