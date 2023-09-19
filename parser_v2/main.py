@@ -51,7 +51,7 @@ def get_all_products_data(urls):
             "1380b703-ce81-ff05-f115-39571d94dfcd"
         ][KEYS[i]]["catalog"]["product"]
 
-        name = product["name"]
+        name = product["name"].capitalize()
         price = product["price"]  # -> int
         formatted_price = product["formattedPrice"]  # -> string
         is_in_stock = product["isInStock"]  # -> boolean
@@ -105,13 +105,17 @@ def delivery(delivery_url):
 
 
 def faq(faq_url):
+    faq_tags = [
+        "div[id='comp-ldbsxu9b4']",
+        "div[id='comp-ldbsxu9b7']",
+        "div[id='comp-ldbsxu9c']",
+    ]
     soup = get_soup(faq_url)
-    faq1 = soup.select_one("div[id='comp-ldbsxu9b4']").get_text()
-    faq2 = soup.select_one("div[id='comp-ldbsxu9b7']").get_text()
-    faq3 = soup.select_one("div[id='comp-ldbsxu9c']").get_text()
-    faq = [faq1.strip(), faq2.strip(), faq3.strip()]
-    write_data_to_file(faq, filename="faq.json", mode="w")
-    return faq
+    faq = ""
+    for data in faq_tags:
+        faq += f"\n{soup.select_one(data).get_text()}"
+    write_data_to_file(faq.strip(), filename="faq.json", mode="w")
+    return faq.strip()
 
 
 def write_data_to_file(data, filename, mode):
