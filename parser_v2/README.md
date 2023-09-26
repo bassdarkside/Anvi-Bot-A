@@ -6,8 +6,8 @@ cd Anvi-Bot-A
 pip install -r parser_v2/requirments.txt
 ```
 ---
-### Launching   
-To start parsing, execute in the console:
+### ~~Launching~~   
+~~How start parsing, execute in the console:~~
 ```sh
 python3 parser_v2/main.py
 ```
