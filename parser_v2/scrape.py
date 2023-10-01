@@ -8,6 +8,8 @@ from .config import HEADERS, TAG, PROP, DESC
 
 path = Path(__file__)
 path = path.parent.joinpath("data")
+# Need for create 'data' dir
+folder_path = "./parser_v2/data"
 
 
 class Scrape:
@@ -23,6 +25,12 @@ class Scrape:
         return soup
 
     def write_data_to_file(self, data, fname):
+        if not Path(folder_path).exists():
+            Path(folder_path).mkdir()
+            print(f"Folder '{folder_path}' was created.")
+        else:
+            print(f"Folder '{folder_path}' already exists.")
+
         with open(f"{path}/{fname}{self.fmt}", mode="w") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
         print(f"'{fname}{self.fmt}' OK")
