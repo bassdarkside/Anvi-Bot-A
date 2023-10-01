@@ -15,17 +15,15 @@ pip3 install -r requirments.txt
 ### Setting up `.env` file
 
 The `.env.txt` example file is located in the `bot_start` directory.  
-1. Rename `.env.txt` file to `.env` and open.
-
-2. Put Telegram API Token and last four digits of ID `Listen Chat`.
-
-    ![how to](/Anvi-Bot-A/img/how-to-env.png?raw=true "Title")
-
-    Listen Chat <https://t.me/+loCzklVYXz5hOTJi>
-
-
-
+>1. Rename `.env.txt` file to `.env` and open.
+>2. Put Telegram API Token
+>3. Replace `'XXXX'` (I will send the chat **ID** upon request).  
 ---
+>**Listen Chat** _<https://t.me/+loCzklVYXz5hOTJi>_.
+
+![how to](img/how-to-env.png?raw=true "Title")
+
+
 ## Start the bot   
 
 File `run.py` starting parser and bot:
