@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from collections import OrderedDict
 
-PATH = Path("Anvi-Bot-A/parser_v2/data")
+PATH = Path("./parser_v2/data")
 
 
 def read_catalog_from_file():
