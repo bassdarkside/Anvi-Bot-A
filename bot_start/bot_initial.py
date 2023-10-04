@@ -11,35 +11,26 @@ bot = telebot.TeleBot(TOKEN)
 
 catalog = {
     "chapter1": {
-        "markup": "deodorants",
-        "chapter_name": "Дезодорант (3)",
-        "message": "Фізіологічні дезодоранти",
-        "items": ["1", "2", "3"],
+        "markup": "body",
+        "chapter_name": "Тіло",
+        "message": "Фізіологічні дезодоранти, крем для рук",
+        "items": ["1", "2", "3", "13"],
+        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-1-300x300.jpg"
     },
     "chapter2": {
-        "markup": "balms",
-        "chapter_name": "Бальзам для губ (3)",
+        "markup": "face",
+        "chapter_name": "Бальзами для губ",
         "message": "Бальзами для губ і не тільки",
         "items": ["4", "5", "6"],
+        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-2-300x300.jpg"
     },
     "chapter3": {
-        "markup": "shampoo",
-        "chapter_name": "Очищення (3)",
-        "message": "Тверді шампуні",
-        "items": ["7", "8", "9"],
-    },
-    "chapter4": {
-        "markup": "care",
-        "chapter_name": "Догляд (3)",
-        "message": "Бальзами для волосся",
-        "items": ["10", "11", "12"],
-    },
-    "chapter5": {
-        "markup": "other",
-        "chapter_name": "Інше",
-        "message": "Інше",
-        "items": ["13"],
-    },
+        "markup": "hair",
+        "chapter_name": "Волосся",
+        "message": "Шампуні та бальзами",
+        "items": ["7", "8", "9", "10", "11", "12"],
+        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-3-300x300.jpg"
+    }
 }
 
 # {user_id: {item_id: quantity, ...}, ...}
@@ -94,6 +85,7 @@ def callback_chapter(callback):
             if callback.data == callback_data_catalog:
                 items = catalog[callback_data_catalog]["items"]
                 message = catalog[callback_data_catalog]["message"]
+                chapter_img = catalog[callback_data_catalog]["chapter_img"]
                 markup = types.InlineKeyboardMarkup()
                 for item in items:
                     item_name = catalog_items[item]["name"]
@@ -102,11 +94,17 @@ def callback_chapter(callback):
                         item_name, callback_data=item_id
                     )
                     markup.row(button)
-                bot.edit_message_text(
-                    message,
+                # bot.edit_message_text(
+                #     message,
+                #     callback.message.chat.id,
+                #     callback.message.message_id,
+                #     reply_markup=markup,
+                # )
+                bot.send_photo(
                     callback.message.chat.id,
-                    callback.message.message_id,
-                    reply_markup=markup,
+                    chapter_img,
+                    caption=message,
+                    reply_markup=markup
                 )
     # go to item page
     elif callback.data in catalog_items.keys():
