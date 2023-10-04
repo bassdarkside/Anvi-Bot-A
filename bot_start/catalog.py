@@ -1,12 +1,13 @@
 import json
 from pathlib import Path
 from collections import OrderedDict
+from parser_v2.config import fname_catalog
 
-PATH = Path("./parser_v2/data")
+PATH = Path(__file__).parent.parent.joinpath("parser_v2/data")
 
 
 def read_catalog_from_file():
-    with open(f"{PATH}/catalog.json") as json_file:
+    with open(f"{PATH}/{fname_catalog}") as json_file:
         items_cat = json.load(json_file)
     items_ord = OrderedDict()
     items_cat["5"], items_cat["6"] = items_cat["6"], items_cat["5"]

@@ -2,6 +2,7 @@ import telebot
 from telebot import types, apihelper, util
 from decouple import config
 from bot_start.catalog import read_catalog_from_file
+
 # from logger_run import start_logging
 
 listen_chat = config("listen_chat")
@@ -131,7 +132,7 @@ def callback_chapter(callback):
         )
         add_to_cart = types.InlineKeyboardButton(
             f"Додати у кошик - {item_price_str}",
-            callback_data=f"{item_id}_add_to_cart"
+            callback_data=f"{item_id}_add_to_cart",
         )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
@@ -245,9 +246,11 @@ def callback_chapter(callback):
             user_cart[user_id] = {item_id: 1}
             user_total_sum[user_id] = item_price
         else:
-            user_cart[user_id][item_id] = user_cart[user_id].get(item_id, 0) + 1
+            user_cart[user_id][item_id] = (
+                user_cart[user_id].get(item_id, 0) + 1
+            )
             user_total_sum[user_id] += item_price  # Update the total sum
-        
+
         markup = types.InlineKeyboardMarkup()
         back = types.InlineKeyboardButton(
             "⬅️ Назад до категорії",
@@ -257,11 +260,14 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
-            f"{user_cart[user_id][item_id]} шт.", callback_data="none")
+            f"{user_cart[user_id][item_id]} шт.", callback_data="none"
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
@@ -290,7 +296,7 @@ def callback_chapter(callback):
 
         user_cart[user_id][item_id] = user_cart[user_id].get(item_id, 0) - 1
         user_total_sum[user_id] -= item_price  # Update the total sum
-        
+
         markup = types.InlineKeyboardMarkup()
         back = types.InlineKeyboardButton(
             "⬅️ Назад до категорії",
@@ -300,11 +306,14 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
-            f"{user_cart[user_id][item_id]} шт.", callback_data="none")
+            f"{user_cart[user_id][item_id]} шт.", callback_data="none"
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
@@ -339,7 +348,7 @@ def callback_chapter(callback):
 
         user_cart[user_id][item_id] = user_cart[user_id].get(item_id, 0) + 1
         user_total_sum[user_id] += item_price  # Update the total sum
-        
+
         markup = types.InlineKeyboardMarkup()
         back = types.InlineKeyboardButton(
             "⬅️ Назад до категорії",
@@ -349,11 +358,14 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
-            f"{user_cart[user_id][item_id]} шт.", callback_data="none")
+            f"{user_cart[user_id][item_id]} шт.", callback_data="none"
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
@@ -370,7 +382,6 @@ def callback_chapter(callback):
             caption=item_name,
             reply_markup=markup,
         )
-
 
 
 def listener(messages):
