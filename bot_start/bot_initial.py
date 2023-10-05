@@ -14,22 +14,29 @@ catalog = {
         "markup": "body",
         "chapter_name": "Тіло",
         "message": "Фізіологічні дезодоранти, крем для рук",
-        "items": ["1", "2", "3", "13"],
+        "items": ["body1", "body3", "body4"],
         "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-1-300x300.jpg"
     },
     "chapter2": {
         "markup": "face",
         "chapter_name": "Бальзами для губ",
         "message": "Бальзами для губ і не тільки",
-        "items": ["4", "5", "6"],
+        "items": ["face1", "face2", "face3"],
         "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-2-300x300.jpg"
     },
     "chapter3": {
         "markup": "hair",
         "chapter_name": "Волосся",
         "message": "Шампуні та бальзами",
-        "items": ["7", "8", "9", "10", "11", "12"],
+        "items": ["hair1", "hair2", "hair3", "hair4", "hair5", "hair7"],
         "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-3-300x300.jpg"
+    },
+    "chapter4": {
+        "markup": "gift_card",
+        "chapter_name": "Подарункова карта",
+        "message": "ANVI — український бренд.\n Поєднуючи веганську косметику та кращі активні інградієнти, ми підклуємося про вас.\n Використовуючи натуральні тари ми піклуємося про довкілля.",
+        "items": ["body2"],
+        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/podarunkovyj-sertyfikat.jpg"
     }
 }
 
@@ -94,12 +101,6 @@ def callback_chapter(callback):
                         item_name, callback_data=item_id
                     )
                     markup.row(button)
-                # bot.edit_message_text(
-                #     message,
-                #     callback.message.chat.id,
-                #     callback.message.message_id,
-                #     reply_markup=markup,
-                # )
                 bot.send_photo(
                     callback.message.chat.id,
                     chapter_img,
@@ -114,8 +115,6 @@ def callback_chapter(callback):
             user_total_sum[user_id] = 0
 
         markup = types.InlineKeyboardMarkup()
-        # for id in catalog_items.keys():
-        #     if callback.data == id:
         chapter = catalog_items[item_id]["chapter"]
         back = types.InlineKeyboardButton(
             "⬅️ Назад до категорії",
