@@ -1,36 +1,44 @@
 from .scrape import Scrape, Item
-from .config import URL
+from .config import fname_item_pages, fname_catalog
 
 
-def run_scrape():
-    """
-    The `run` function scrapes product information from a website,
-    stores it in a dictionary, and writes it to a JSON file.
+scrape = Scrape()
 
-    :return: The function `run()` is returning a dictionary `items_cat`
-    which contains information aboutthe scraped items.
 
-    Path file 'parser_v2/data/catalog.json'
-    """
-    scrape = Scrape()
-    scrape.get_urls(URL, write=False)
-    item_urls = scrape.get_products_urls(write=True)
-    items_cat = {}
-    for indx, link in enumerate(item_urls, start=1):
-        meta = Item(link)
-        items_cat[indx] = {
-            "name": meta.get_title(),
-            "chapter": "chapter",
-            "price": meta.get_price(),
-            "url": link,
-            "description": meta.get_description(),
-            "image": meta.get_image(),
-        }
+def scrape_url():
+    scrape.urls(write=True)
+    scrape.products_urls(write=True)
 
+
+def make_catalog():
+    catalog = {}
+    links = scrape.read_data(fname_item_pages)
+    print("Collecting catalog..")
+    for category in links.keys():
+        indx = 1
+        for link in links[category]:
+            key = f"{category}{indx}"
+            meta = Item(link)
+            if "karta" in link:
+                key = "gift_card"
+                indx -= 1
+            catalog[key] = {
+                "url": link,
+                "chapter": category,  # f"{category}{indx}",
+                "name": meta.title(),
+                "price": meta.price(),
+                "image": meta.image(),
+                "status": meta.status(),
+                "product_id": meta.product_id(),
+                "variations": meta.variations(),
+                "description": meta.description(),
+            }
+            indx += 1
     # ./data/catalog.json
-    scrape.write_data_to_file(items_cat, "catalog")
-    return items_cat
+    scrape.write_data(catalog, fname_catalog)
+    return catalog
 
 
 if __name__ == "__main__":
-    run_scrape()
+    scrape_url()
+    make_catalog()

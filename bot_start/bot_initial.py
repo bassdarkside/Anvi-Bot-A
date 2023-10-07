@@ -1,8 +1,7 @@
 import telebot
 from telebot import types, apihelper, util
 from decouple import config
-from bot_start.catalog import read_catalog_from_file
-# from logger_run import start_logging
+from bot_start.catalog import read_catalog
 
 listen_chat = config("listen_chat")
 TOKEN = config("TOKEN")
@@ -10,34 +9,34 @@ bot = telebot.TeleBot(TOKEN)
 
 
 catalog = {
-    "chapter1": {
+    "body": {
         "markup": "body",
         "chapter_name": "Тіло",
         "message": "Фізіологічні дезодоранти, крем для рук",
-        "items": ["body1", "body3", "body4"],
-        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-1-300x300.jpg"
+        "items": ["body1", "body3", "body4"],  # "body2"
+        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-1-300x300.jpg",
     },
-    "chapter2": {
+    "face": {
         "markup": "face",
         "chapter_name": "Бальзами для губ",
         "message": "Бальзами для губ і не тільки",
         "items": ["face1", "face2", "face3"],
-        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-2-300x300.jpg"
+        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-2-300x300.jpg",
     },
-    "chapter3": {
+    "hair": {
         "markup": "hair",
         "chapter_name": "Волосся",
         "message": "Шампуні та бальзами",
-        "items": ["hair1", "hair2", "hair3", "hair4", "hair5", "hair7"],
-        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-3-300x300.jpg"
+        "items": ["hair1", "hair2", "hair3", "hair4", "hair5", "hair6"],
+        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/katehoriia-3-300x300.jpg",
     },
-    "chapter4": {
+    "gift_card": {
         "markup": "gift_card",
         "chapter_name": "Подарункова карта",
         "message": "ANVI — український бренд.\n Поєднуючи веганську косметику та кращі активні інградієнти, ми підклуємося про вас.\n Використовуючи натуральні тари ми піклуємося про довкілля.",
-        "items": ["body2"],
-        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/podarunkovyj-sertyfikat.jpg"
-    }
+        "items": ["gift_card"],
+        "chapter_img": "https://anvibodycare.com/wp-content/uploads/2023/09/podarunkovyj-sertyfikat.jpg",
+    },
 }
 
 # user cart dict
@@ -47,7 +46,8 @@ user_total_sum = {}
 
 
 # Reply Buttons
-@bot.message_handler(regexp="ривіт")
+# regexp="ривіт"
+@bot.message_handler(commands=["start"])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("📒 Каталог")
@@ -86,7 +86,9 @@ def check_reply(message: types.Message):
             message_list.append("Чекаю на товари для тебе 😌\n \n Твій кошик 🌱")
             message_cart = "\n".join(message_list)
             bot.send_message(message.chat.id, message_cart)
-        elif all(item["quantity"] == 0 for item in user_cart[user_id].values()):
+        elif all(
+            item["quantity"] == 0 for item in user_cart[user_id].values()
+        ):
             message_list.append("Чекаю на нові товари 🐣\n \n Твій кошик 🌱")
             message_cart = "\n".join(message_list)
             bot.send_message(message.chat.id, message_cart)
@@ -95,33 +97,39 @@ def check_reply(message: types.Message):
             for item_id, details in items.items():
                 item_cost = details["quantity"] * details["price"]
                 if details["quantity"] > 0:
-                    message_list.append(f"{details['name']}\n"
-                                        f"{details['quantity']} шт х "
-                                        f"{details['price']} ₴"
-                                        f" = {item_cost} ₴\n")
-            message_list.append("⋯⋯⋯⋯⋯⋯⋯⋯⋯\n"
-                                f"Загалом: {user_total_sum[user_id]} ₴\n \n"
-                                "Твій кошик 🌳")
+                    message_list.append(
+                        f"{details['name']}\n"
+                        f"{details['quantity']} шт х "
+                        f"{details['price']} ₴"
+                        f" = {item_cost} ₴\n"
+                    )
+            message_list.append(
+                "⋯⋯⋯⋯⋯⋯⋯⋯⋯\n"
+                f"Загалом: {user_total_sum[user_id]} ₴\n \n"
+                "Твій кошик 🌳"
+            )
             message_cart = "\n".join(message_list)
             markup = types.InlineKeyboardMarkup()
             cart_edit_btn = types.InlineKeyboardButton(
-                "✏️Редагувати", callback_data="cart_edit")
+                "✏️Редагувати", callback_data="cart_edit"
+            )
             cart_empty_btn = types.InlineKeyboardButton(
-                "❌ Очистити кошик", callback_data="cart_empty")
+                "❌ Очистити кошик", callback_data="cart_empty"
+            )
             checkout_btn = types.InlineKeyboardButton(
-                "✅ Оформити замовлення", callback_data="checkout")
+                "✅ Оформити замовлення", callback_data="checkout"
+            )
             markup.row(cart_edit_btn, cart_empty_btn)
             markup.row(checkout_btn)
             bot.send_message(
                 message.chat.id, message_cart, reply_markup=markup
             )
 
+
 # Chapter -> Items (InlineButtons menu updating)
 @bot.callback_query_handler(func=lambda callback: True)
 def callback_chapter(callback):
-    # from .catalog import read_catalog_from_file
-
-    catalog_items = read_catalog_from_file()
+    catalog_items = read_catalog()
     # go to chapter
     if callback.data in catalog.keys():
         for callback_data_catalog in catalog.keys():
@@ -141,7 +149,7 @@ def callback_chapter(callback):
                     callback.message.chat.id,
                     chapter_img,
                     caption=message,
-                    reply_markup=markup
+                    reply_markup=markup,
                 )
     # go to item page
     elif callback.data in catalog_items.keys():
@@ -164,7 +172,7 @@ def callback_chapter(callback):
         )
         add_to_cart = types.InlineKeyboardButton(
             f"Додати у кошик - {item_price_str}",
-            callback_data=f"{item_id}_add_to_cart"
+            callback_data=f"{item_id}_add_to_cart",
         )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
@@ -279,14 +287,16 @@ def callback_chapter(callback):
             user_total_sum[user_id] = 0
 
         if item_id in user_cart[user_id]:
-            user_cart[user_id][item_id]["quantity"] += 1  # If the item is already in the cart, increase the quantity by 1
+            user_cart[user_id][item_id][
+                "quantity"
+            ] += 1  # If the item is already in the cart, increase the quantity by 1
             user_total_sum[user_id] += item_price  # Update the total sum
         else:
             user_cart[user_id][item_id] = {
-                    "name": item_name,
-                    "quantity": 1,
-                    "price": item_price
-                    }
+                "name": item_name,
+                "quantity": 1,
+                "price": item_price,
+            }
             user_total_sum[user_id] += item_price  # Update the total sum
         markup = types.InlineKeyboardMarkup()
         back = types.InlineKeyboardButton(
@@ -297,12 +307,15 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
             f"{user_cart[user_id][item_id]['quantity']} шт.",
-            callback_data="none")
+            callback_data="none",
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
@@ -331,7 +344,7 @@ def callback_chapter(callback):
 
         user_cart[user_id][item_id]["quantity"] -= 1
         user_total_sum[user_id] -= item_price  # Update the total sum
-        
+
         markup = types.InlineKeyboardMarkup()
         back = types.InlineKeyboardButton(
             "⬅️ Назад до категорії",
@@ -341,15 +354,19 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
-            f"{user_cart[user_id][item_id]['quantity']} шт.", callback_data="none")
+            f"{user_cart[user_id][item_id]['quantity']} шт.",
+            callback_data="none",
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
-        if user_cart[user_id][item_id]['quantity'] == 0:
+        if user_cart[user_id][item_id]["quantity"] == 0:
             markup.row(description)
             markup.row(n_items, add_1)
             markup.row(sum)
@@ -380,7 +397,7 @@ def callback_chapter(callback):
 
         user_cart[user_id][item_id]["quantity"] += 1
         user_total_sum[user_id] += item_price  # Update the total sum
-     
+
         markup = types.InlineKeyboardMarkup()
         back = types.InlineKeyboardButton(
             "⬅️ Назад до категорії",
@@ -390,12 +407,15 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
             f"{user_cart[user_id][item_id]['quantity']} шт.",
-            callback_data="none")
+            callback_data="none",
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
@@ -419,26 +439,31 @@ def callback_chapter(callback):
         markup = types.InlineKeyboardMarkup()
         message_cart_edit = "Редагування"
         for item_id, details in items.items():
-            item_name = details['name']
-            if user_cart[user_id][item_id]['quantity'] > 0:
-                name = types.InlineKeyboardButton(item_name,
-                                                  callback_data=item_id)
+            item_name = details["name"]
+            if user_cart[user_id][item_id]["quantity"] > 0:
+                name = types.InlineKeyboardButton(
+                    item_name, callback_data=item_id
+                )
                 remove_1 = types.InlineKeyboardButton(
                     "✏️-1",
-                    callback_data=f"{item_id}_remove_1_from_cart_incart")
+                    callback_data=f"{item_id}_remove_1_from_cart_incart",
+                )
                 n_items = types.InlineKeyboardButton(
                     f"{user_cart[user_id][item_id]['quantity']} шт.",
-                    callback_data="none")
+                    callback_data="none",
+                )
                 add_1 = types.InlineKeyboardButton(
-                    "✏️+1", callback_data=f"{item_id}_add_1_to_cart_incart")
+                    "✏️+1", callback_data=f"{item_id}_add_1_to_cart_incart"
+                )
                 markup.row(name)
                 markup.row(remove_1, n_items, add_1)
         sum = types.InlineKeyboardButton(
-                f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum")
+            f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
+        )
         markup.row(sum)
-        bot.send_message(callback.message.chat.id,
-                         message_cart_edit,
-                         reply_markup=markup)
+        bot.send_message(
+            callback.message.chat.id, message_cart_edit, reply_markup=markup
+        )
     # _remove_1_from_cart_incart - cart edit
     elif callback.data.endswith("_remove_1_from_cart_incart"):
         item_id = callback.data.replace("_remove_1_from_cart_incart", "")
@@ -452,30 +477,34 @@ def callback_chapter(callback):
         markup = types.InlineKeyboardMarkup()
         message_cart_edit = "Редагування"
         for item_id, details in items.items():
-            item_name = details['name']
-            if user_cart[user_id][item_id]['quantity'] > 0:
-                name = types.InlineKeyboardButton(item_name,
-                                                  callback_data=item_id)
+            item_name = details["name"]
+            if user_cart[user_id][item_id]["quantity"] > 0:
+                name = types.InlineKeyboardButton(
+                    item_name, callback_data=item_id
+                )
                 remove_1 = types.InlineKeyboardButton(
                     "✏️-1",
-                    callback_data=f"{item_id}_remove_1_from_cart_incart")
+                    callback_data=f"{item_id}_remove_1_from_cart_incart",
+                )
                 n_items = types.InlineKeyboardButton(
                     f"{user_cart[user_id][item_id]['quantity']} шт.",
-                    callback_data="none")
+                    callback_data="none",
+                )
                 add_1 = types.InlineKeyboardButton(
-                    "✏️+1", callback_data=f"{item_id}_add_1_to_cart_incart")
+                    "✏️+1", callback_data=f"{item_id}_add_1_to_cart_incart"
+                )
                 markup.row(name)
                 markup.row(remove_1, n_items, add_1)
         sum = types.InlineKeyboardButton(
-                f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum")
+            f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
+        )
         markup.row(sum)
         bot.delete_message(
             callback.message.chat.id, callback.message.message_id
         )
-        bot.send_message(callback.message.chat.id,
-                         message_cart_edit,
-                         reply_markup=markup
-                         )
+        bot.send_message(
+            callback.message.chat.id, message_cart_edit, reply_markup=markup
+        )
     # _add_1_to_cart_incart - cart edit
     elif callback.data.endswith("_add_1_to_cart_incart"):
         item_id = callback.data.replace("_add_1_to_cart_incart", "")
@@ -489,28 +518,34 @@ def callback_chapter(callback):
         markup = types.InlineKeyboardMarkup()
         message_cart_edit = "Редагування"
         for item_id, details in items.items():
-            item_name = details['name']
-            if user_cart[user_id][item_id]['quantity'] > 0:
-                name = types.InlineKeyboardButton(item_name, callback_data=item_id)
+            item_name = details["name"]
+            if user_cart[user_id][item_id]["quantity"] > 0:
+                name = types.InlineKeyboardButton(
+                    item_name, callback_data=item_id
+                )
                 remove_1 = types.InlineKeyboardButton(
-                    "✏️-1", callback_data=f"{item_id}_remove_1_from_cart_incart")
+                    "✏️-1",
+                    callback_data=f"{item_id}_remove_1_from_cart_incart",
+                )
                 n_items = types.InlineKeyboardButton(
                     f"{user_cart[user_id][item_id]['quantity']} шт.",
-                    callback_data="none")
+                    callback_data="none",
+                )
                 add_1 = types.InlineKeyboardButton(
-                    "✏️+1", callback_data=f"{item_id}_add_1_to_cart_incart")
+                    "✏️+1", callback_data=f"{item_id}_add_1_to_cart_incart"
+                )
                 markup.row(name)
                 markup.row(remove_1, n_items, add_1)
         sum = types.InlineKeyboardButton(
-                f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum")
+            f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
+        )
         markup.row(sum)
         bot.delete_message(
             callback.message.chat.id, callback.message.message_id
         )
-        bot.send_message(callback.message.chat.id,
-                         message_cart_edit,
-                         reply_markup=markup
-                         )
+        bot.send_message(
+            callback.message.chat.id, message_cart_edit, reply_markup=markup
+        )
     # empty cart
     elif callback.data == "cart_empty":
         # Remove all items from the user's cart
@@ -518,10 +553,11 @@ def callback_chapter(callback):
         user_total_sum[callback.from_user.id] = {}
         bot.answer_callback_query(callback.id, "Товари видалено 🫡")
         # Optionally, update the cart message to reflect the empty cart
-        bot.edit_message_text("Кошик порожній 🍃",
-                              callback.message.chat.id,
-                              callback.message.message_id)
-
+        bot.edit_message_text(
+            "Кошик порожній 🍃",
+            callback.message.chat.id,
+            callback.message.message_id,
+        )
 
 
 def listener(messages):
@@ -542,8 +578,7 @@ def bot_run():
         print("Bot starting..")
         apihelper.SESSION_TIME_TO_LIVE = 5 * 60
         apihelper.RETRY_ON_ERROR = True
-        # start_logging()
-        # bot.set_update_listener(listener)
+        bot.set_update_listener(listener)
         bot.infinity_polling()
     except Exception as err:
         print(err)

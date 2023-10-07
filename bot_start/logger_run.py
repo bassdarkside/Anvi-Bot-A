@@ -1,7 +1,11 @@
-from pathlib import Path
-from logging.handlers import RotatingFileHandler
 import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+
 import telebot
+
+folder_path = Path(__file__).parent.parent
+folder_path = str(folder_path) + "/log"
 
 
 def start_logging():
@@ -10,16 +14,12 @@ def start_logging():
         doesn't exist, sets the logging level to ERROR,
         and adds a file handler to log messages to a file.
     """
-    folder_path = "Anvi-Bot-A/log"
 
     if not Path(folder_path).exists():
         Path(folder_path).mkdir()
-        print(f"Folder '{folder_path}' was created.")
-    else:
-        print(f"Folder '{folder_path}' already exists.")
+        print("Folder '/log' was created.")
 
     telebot.logger.setLevel(logging.ERROR)
-
     file_handler_log = RotatingFileHandler(
         f"{folder_path}/bot_log.txt", maxBytes=1024, backupCount=3
     )
@@ -28,6 +28,7 @@ def start_logging():
     )
     file_handler_log.setFormatter(log_formatter)
     telebot.logger.addHandler(file_handler_log)
+    print("Logging is started..")
 
 
 if __name__ == "__main__":
