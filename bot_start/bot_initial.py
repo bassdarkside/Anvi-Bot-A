@@ -219,37 +219,39 @@ def callback_chapter(callback):
                     )
     # back description -> item (the description message is left)
     elif callback.data.startswith("back_to_item_"):
+        user_id = callback.from_user.id
         item_id = callback.data.replace("back_to_item_", "")
+        item_name = catalog_items[item_id]["name"]
+        item_image = catalog_items[item_id]["image"]
+        item_price_str = catalog_items[item_id]["price"]
+        chapter = catalog_items[item_id]["chapter"]
         markup = types.InlineKeyboardMarkup()
-        for id in catalog_items.keys():
-            if item_id == id:
-                chapter = catalog_items[id]["chapter"]
-                back = types.InlineKeyboardButton(
-                    "⬅️ Назад до категорії",
-                    callback_data=f"back_to_chapter_{chapter}",
-                )
-                item_name = catalog_items[id]["name"]
-                item_image = catalog_items[id]["image"]
-                item_price = catalog_items[id]["price"]
-                description = types.InlineKeyboardButton(
-                    "Опис продукту", callback_data=f"{id}_description"
-                )
-                add_to_cart = types.InlineKeyboardButton(
-                    "Додати у кошик", callback_data="cart"
-                )
-                sum = types.InlineKeyboardButton(
-                    item_price, callback_data="sum"
-                )
-                markup.row(description)
-                markup.row(add_to_cart)
-                markup.row(sum)
-                markup.row(back)
-                bot.send_photo(
-                    callback.message.chat.id,
-                    item_image,
-                    caption=item_name,
-                    reply_markup=markup,
-                )
+
+        back = types.InlineKeyboardButton(
+            "⬅️ Назад до категорії",
+            callback_data=f"back_to_chapter_{chapter}",
+        )
+        
+        description = types.InlineKeyboardButton(
+            "Опис продукту", callback_data=f"{item_id}_description"
+        )
+        add_to_cart = types.InlineKeyboardButton(
+            f"Додати у кошик - {item_price_str}",
+            callback_data=f"{item_id}_add_to_cart"
+        )
+        sum = types.InlineKeyboardButton(
+            f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
+        )
+        markup.row(description)
+        markup.row(add_to_cart)
+        markup.row(sum)
+        markup.row(back)
+        bot.send_photo(
+            callback.message.chat.id,
+            item_image,
+            caption=item_name,
+            reply_markup=markup,
+        )
     # back item -> chapter
     elif callback.data.startswith("back_to_chapter_"):
         chapter = callback.data.replace("back_to_chapter_", "")
