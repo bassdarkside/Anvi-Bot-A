@@ -23,6 +23,11 @@ The `.env.txt` example file is located in the `bot_start` directory.
 
 ![how to](img/how-to-env.png?raw=true "Title")
 
+### To use features for admins, you need to add your Telegram ID to `.env `.  
+    ADMIN = 123454321
+
+#### after that you can use command:
+    /admin
 
 ## Start the bot   
 
@@ -30,3 +35,5 @@ File `run.py` starting parser and bot:
 ```sh
 python3 run.py
 ```
+
+### The catalog is updated once a day at `06:00` Kyiv time
