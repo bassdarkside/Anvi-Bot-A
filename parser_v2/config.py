@@ -1,11 +1,14 @@
 from fake_useragent import UserAgent
 from fake_useragent import FakeUserAgentError
+from pathlib import Path
 
-fname_pages = "pages.json"
-fname_catalog = "catalog.json"
-fname_item_pages = "item_pages.json"
+PAGES = "pages.json"
+CATALOG = "catalog.json"
+ITEMS = "item_pages.json"
 
 URL = "https://anvibodycare.com/"
+
+DATAPATH = Path(__file__).parent.joinpath("data")
 DESC = ["description", "og:description", "twitter:description"]
 TAG = [f"a[href^='{URL}']", "a[href*='.com/shop/']", "a[href*='.com/product']"]
 CLASS = [

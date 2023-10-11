@@ -4,16 +4,15 @@ import requests as req
 from bs4 import BeautifulSoup
 
 from parser_v2.config import (
-    fname_item_pages,
-    fname_pages,
+    DATAPATH,
     HEADERS,
+    ITEMS,
+    PAGES,
     CLASS,
     DESC,
     URL,
     TAG,
 )
-
-path = Path(__file__).parent.joinpath("data")
 
 
 class Scrape:
@@ -26,15 +25,15 @@ class Scrape:
         return soup
 
     def write_data(self, data, fname):
-        if not Path(path).exists():
-            Path(path).mkdir()
+        if not Path(DATAPATH).exists():
+            Path(DATAPATH).mkdir()
             print("Folder '/parser_v2/data' was created.")
-        with open(f"{path}/{fname}", mode="w") as f:
+        with open(f"{DATAPATH}/{fname}", mode="w") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
         print(f"'{fname}' OK")
 
     def read_data(self, fname):
-        with open(f"{path}/{fname}", mode="r") as f:
+        with open(f"{DATAPATH}/{fname}", mode="r") as f:
             data = json.load(f)
             return data
 
@@ -56,11 +55,11 @@ class Scrape:
             "categories": category,
         }
         if write:
-            self.write_data(self.links, fname_pages)
+            self.write_data(self.links, PAGES)
         return self.links
 
     def products_urls(self, write=True):
-        categories_links = self.read_data(fname_pages)
+        categories_links = self.read_data(PAGES)
         body, face, hair = [], [], []
         self.category_items = {}
         for link in categories_links["categories"]:
@@ -83,7 +82,7 @@ class Scrape:
                 "hair": hair,
             }
         if write:
-            self.write_data(self.category_items, fname_item_pages)
+            self.write_data(self.category_items, ITEMS)
         return self.category_items
 
 
@@ -92,22 +91,15 @@ class Item:
         self.scrape = Scrape()
         self.soup = self.scrape.soup(item_url)
 
-    def title(self):
+    def name(self):
         soup = self.soup
-        title = None
-        if soup.title.string:
-            title = soup.title.string
-        elif soup.find("meta", property="og:title"):
-            title = soup.find("meta", property="og:title").get("content")
-        elif soup.find("meta", property="twitter:title"):
-            title = soup.find("meta", property="twitter:title").get("content")
-        elif soup.find("h1"):
-            title = soup.find("h1").string
-        elif soup.find_all("h1"):
-            title = soup.find_all("h1")[0].string
-        if title:
-            title = title.split("|")[0]
-        return title.capitalize()
+        name = None
+        try:
+            name = soup.select('script[type="application/ld+json"]')
+            name = json.loads(name[1].getText())
+            return name["@graph"][1]["name"]
+        except KeyError:
+            pass
 
     def price(self):
         soup = self.soup
@@ -115,23 +107,40 @@ class Item:
         if soup.select('p[class="price product-page-price"]'):
             price = soup.select('p[class="price product-page-price"]')
             for p in price:
-                price = p.text
-        if soup.select('vid[class="price-wrapper"]'):
-            price = soup.select('vid[class="price-wrapper"]')
-            for p in price:
-                price = p.text
-        elif soup.select('p[class="price product-page-price price-on-sale"]'):
-            price = soup.select(
-                'p[class="price product-page-price price-on-sale"]'
-            )
-            for p in price:
-                price = p.text
-        if len(price) > 6:
-            return price[1:4:]
+                price = p.text.strip()
+            return price
+        try:
+            price = soup.select('script[type="application/ld+json"]')
+            price = json.loads(price[1].getText())
+            low_price = price["@graph"][1]["offers"][0]["lowPrice"]
+            hi_price = price["@graph"][1]["offers"][0]["highPrice"]
+            price = f"{low_price} ₴ – {hi_price} ₴"
+            return price
+        except Exception:
+            pass
 
-        return price[1:4:]  # + " \u20B4" # '₴'
+    def price_int(self):
+        soup = self.soup
+        price_int = None
+        try:
+            price_int = soup.select('script[type="application/ld+json"]')
+            price_int = json.loads(price_int[1].getText())
+            price_int = price_int["@graph"][1]["offers"][0]["price"]
+            return int(price_int)
+        except KeyError:
+            pass
 
     def description(self):
+        soup = self.soup
+        description = None
+        try:
+            description = soup.select('script[type="application/ld+json"]')
+            description = json.loads(description[1].getText())
+            return description["@graph"][1]["description"].strip()
+        except Exception:
+            pass
+
+    def description_full(self):
         soup = self.soup
         desc = ""
         data = None
@@ -150,17 +159,12 @@ class Item:
     def image(self):
         soup = self.soup
         img = None
-        if soup.find("meta", property="image"):
-            img = soup.find("meta", property="image").get("content")
-        elif soup.find("meta", property="og:image"):
-            img = soup.find("meta", property="og:image").get("content")
-        elif soup.find("meta", property="twitter:image"):
-            img = soup.find("meta", property="twitter:image").get("content")
-        elif soup.find_all("img", src=True):
-            img = soup.find_all("img")
-            if img:
-                img = soup.find_all("img")[0].get("src")
-        return img
+        try:
+            img = soup.select('script[type="application/ld+json"]')
+            img = json.loads(img[1].getText())
+            return img["@graph"][1]["image"]
+        except Exception:
+            pass
 
     def status(self):
         soup = self.soup
@@ -172,26 +176,47 @@ class Item:
     def product_id(self):
         soup = self.soup
         item_id = None
-        if soup.find("button", {"name": "add-to-cart"}):
-            item_id = soup.find("button", {"name": "add-to-cart"}).get("value")
-        if soup.select_one("div[data-product_id]"):
-            item_id = soup.select_one("div[data-product_id]").get(
-                "data-product_id"
-            )
-        return item_id
+        try:
+            item_id = soup.select('script[type="application/ld+json"]')
+            item_id = json.loads(item_id[1].getText())
+            item_id = item_id["@graph"][1]["sku"]
+            return str(item_id)
+        except Exception:
+            pass
 
     def variations(self):
         soup = self.soup
-        vid = []
+        options = {}
         if soup.select_one("form[data-product_variations]"):
             variants = soup.select_one("form[data-product_variations]")
-            vario = json.loads(variants.get("data-product_variations"))
-            for n in range(len(vario)):
-                if vario[n]["variation_is_active"]:
-                    attr = (
-                        vario[n]["variation_id"],
-                        vario[n]["attributes"]["attribute_pa_vaha"],
-                        vario[n]["attributes"]["attribute_pa_pakuvannia"],
-                    )
-                    vid.append(attr)
-        return vid
+            variants = json.loads(variants.get("data-product_variations"))
+            for n in range(len(variants)):
+                name = ""
+                vario = variants[n]
+                price = vario["display_price"]
+                if vario["variation_is_active"]:
+                    id = vario["variation_id"]
+                    weight = vario["attributes"]["attribute_pa_vaha"]
+                    packing = vario["attributes"]["attribute_pa_pakuvannia"]
+                    if packing == "aliuminiieva-upakovka":
+                        name = "алюмінієва упаковка"
+                        packing = "a"
+                    if packing == "paperova-upakovka":
+                        name = "паперова упаковка"
+                        packing = "p"
+                    if packing == "sklana-pliashka-z-aliuminiievoiu-kryshkoiu":
+                        name = "скляна пляшка з алюмінієвою кришкою"
+                        packing = "alum"
+                    if packing == "sklana-pliashka-z-krapelnychkoiu":
+                        name = "скляна пляшка з крапельничкою"
+                        packing = "drop"
+                    opt = {
+                        f"{packing}{weight[:2:]}": {
+                            "vario_id": str(id),
+                            "vario_price": price,
+                            "vario_weight": weight[:2:],
+                            "packing_name": name,
+                        }
+                    }
+                    options.update(opt)
+        return options
