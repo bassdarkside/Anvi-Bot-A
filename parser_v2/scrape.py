@@ -38,7 +38,7 @@ class Scrape:
             data = json.load(f)
             return data
 
-    def urls(self, write=False):
+    def urls(self, write=True):
         soup = self.soup(URL).select(TAG[0])
         category = []
         self.links = {}
@@ -59,7 +59,7 @@ class Scrape:
             self.write_data(self.links, fname_pages)
         return self.links
 
-    def products_urls(self, write=False):
+    def products_urls(self, write=True):
         categories_links = self.read_data(fname_pages)
         body, face, hair = [], [], []
         self.category_items = {}

@@ -1,9 +1,15 @@
+import time
+import threading
+import schedule
+from schedule import every, repeat
 import telebot
-from telebot import types, apihelper, util
+from telebot import types, custom_filters, util
 from decouple import config
 from bot_start.catalog import read_catalog
+from parser_v2.main import scrape_url, make_catalog
 
 listen_chat = config("listen_chat")
+ADMIN = int(config("ADMIN"))
 TOKEN = config("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
@@ -63,6 +69,39 @@ def start(message):
         " 🌱ANVI🌱🥰".format(message.from_user),
         reply_markup=markup,
     )
+
+
+@bot.message_handler(
+    chat_id=[ADMIN],
+    commands=["admin"],
+)
+def admin_rep(message):
+    bot.send_message(
+        message.chat.id,
+        "Hello admin! You can use /update for update catalog "
+        + "or /status for show current schedule.",
+    )
+
+
+@bot.message_handler(commands=["admin"])
+def not_admin(message):
+    bot.send_message(message.chat.id, "You are not admin! I call to 911!")
+
+
+bot.add_custom_filter(custom_filters.ChatFilter())
+
+
+@bot.message_handler(chat_id=[ADMIN], commands=["update"])
+def manual_upd(message):
+    bot.send_message(message.chat.id, "Start update..")
+    make_catalog()
+    bot.send_message(message.chat.id, "Catalog is up-to-date!")
+
+
+@bot.message_handler(chat_id=[ADMIN], commands=["status"])
+def show_job(message):
+    all_jobs = schedule.get_jobs()
+    bot.send_message(message.chat.id, str(all_jobs))
 
 
 # Reply on Catalog button click
@@ -231,13 +270,13 @@ def callback_chapter(callback):
             "⬅️ Назад до категорії",
             callback_data=f"back_to_chapter_{chapter}",
         )
-        
+
         description = types.InlineKeyboardButton(
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         add_to_cart = types.InlineKeyboardButton(
             f"Додати у кошик - {item_price_str}",
-            callback_data=f"{item_id}_add_to_cart"
+            callback_data=f"{item_id}_add_to_cart",
         )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
@@ -564,24 +603,37 @@ def callback_chapter(callback):
 
 def listener(messages):
     for m in messages:
-        chat_id = m.chat.id
-        user_name = m.chat.username
-        text = m.text
-
-    bot.send_message(
-        listen_chat,
-        f"user_id: {chat_id}\nuser_name: {user_name}\n message: {text}",
-    )
+        bot.send_message(
+            listen_chat,
+            str(m.chat.first_name) + " [" + str(m.chat.id) + "]: " + m.text,
+        )
 
 
-# Starting the bot
+@repeat(every().day.at(time_str="06:00", tz="Europe/Kyiv"))
+def update_catalog_every_day():
+    global catalog_items
+    scrape_url()
+    make_catalog()
+    catalog_items = read_catalog()
+
+
 def bot_run():
+    global catalog_items
     try:
         print("Bot starting..")
-        apihelper.SESSION_TIME_TO_LIVE = 5 * 60
-        apihelper.RETRY_ON_ERROR = True
-        bot.set_update_listener(listener)
-        bot.infinity_polling()
+        catalog_items = read_catalog()
+        threading.Thread(
+            target=bot.infinity_polling,
+            name="bot_infinity_polling",
+            daemon=True,
+        ).start()
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+        # apihelper.SESSION_TIME_TO_LIVE = 5 * 60
+        # apihelper.RETRY_ON_ERROR = True
+        # # bot.set_update_listener(listener)
+        # bot.infinity_polling()
     except Exception as err:
         print(err)
 

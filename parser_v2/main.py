@@ -6,8 +6,8 @@ scrape = Scrape()
 
 
 def scrape_url():
-    scrape.urls(write=True)
-    scrape.products_urls(write=True)
+    scrape.urls()
+    scrape.products_urls()
 
 
 def make_catalog():
