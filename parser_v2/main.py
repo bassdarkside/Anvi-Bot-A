@@ -1,5 +1,5 @@
 from .scrape import Scrape, Item
-from .config import ITEMS, CATALOG
+from .config import fname_item_pages, fname_catalog
 
 
 scrape = Scrape()
@@ -12,7 +12,7 @@ def scrape_url():
 
 def make_catalog():
     catalog = {}
-    links = scrape.read_data(ITEMS)
+    links = scrape.read_data(fname_item_pages)
     print("Collecting catalog..")
     for category in links.keys():
         indx = 1
@@ -25,9 +25,8 @@ def make_catalog():
             catalog[key] = {
                 "url": link,
                 "chapter": category,
-                "name": meta.name(),
+                "name": meta.title(),
                 "price": meta.price(),
-                "price_int": meta.price_int(),
                 "image": meta.image(),
                 "status": meta.status(),
                 "product_id": meta.product_id(),
@@ -36,17 +35,10 @@ def make_catalog():
             }
             indx += 1
     # ./data/catalog.json
-    scrape.write_data(catalog, CATALOG)
+    scrape.write_data(catalog, fname_catalog)
     return catalog
-
-
-def other_pages():
-    faq = scrape.faq()
-    about = scrape.about()
-    return faq, about
 
 
 if __name__ == "__main__":
     scrape_url()
-    other_pages()
     make_catalog()
