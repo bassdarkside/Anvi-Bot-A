@@ -13,7 +13,3 @@ def read_catalog():
 
 if __name__ == "__main__":
     read_catalog()
-
-#   item_id = catalog['hair2']["product_id"]
-#   qty = 2
-#   order = f"{URL}checkout/?add-to-cart={item_id}&quantity={qty}"
