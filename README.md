@@ -1,6 +1,6 @@
 # Anvi-Bot-A
 
-Anvi-Bot-A - this is a Telegram-bot of the "Fluffy wildebeest" team for purchasing cosmetics from the site `https://www.anvibodycare.com`
+Anvi-Bot-A - this is a Telegram-bot of the "Fluffy wildebeest" team for purchasing cosmetics from the site `https://anvibodycare.com`
 
 ---
 ### Get the repository
@@ -8,7 +8,7 @@ Clone the repository -> navigate to the cloned folder -> install `requirments.tx
 ```sh
 git clone https://github.com/bassdarkside/Anvi-Bot-A.git
 cd Anvi-Bot-A
-pip3 install -r requirments.txt
+pip install -r requirments.txt
 ```
 ---
 ## Before you start 
@@ -24,7 +24,7 @@ The `.env.txt` example file is located in the `bot_start` directory.
 ![how to](img/how-to-env.png?raw=true "Title")
 
 ### To use features for admins, you need to add your Telegram ID to `.env `.  
-    ADMIN = 123454321
+    ADMIN = XXXXXXXXX
 
 #### after that you can use command:
     /admin
@@ -33,7 +33,13 @@ The `.env.txt` example file is located in the `bot_start` directory.
 
 File `run.py` starting parser and bot:
 ```sh
-python3 run.py
+python run.py
 ```
 
 ### The catalog is updated once a day at `06:00` Kyiv time
+
+
+## Change log
+-    Add variations items for "Hair" category
+-    Add "About" and "Contacts" buttons  
+- ...
