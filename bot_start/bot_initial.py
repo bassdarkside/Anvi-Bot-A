@@ -168,6 +168,26 @@ def check_reply(message: types.Message):
             )
 
 
+############        CHECKOUT     CALLBACK        ############
+@bot.callback_query_handler(func=lambda call: call.data == "checkout")
+def callback_checkout(call):
+    for items in user_cart.values():
+        for item_id, values in items.items():
+            id_ = item_id
+            qty = values["quantity"]
+    checkout_link = f"{URL}/checkout/?add-to-cart={id_}&quantity={qty}"
+    markup = quick_markup(
+        {"Перейти на anvibodycare.com": {"url": checkout_link}},
+        row_width=2,
+    )
+    bot.edit_message_text(
+        "✅ Оформити замовлення",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=markup,
+    )
+
+
 # Chapter -> Items (InlineButtons menu updating)
 @bot.callback_query_handler(func=lambda callback: True)
 def callback_chapter(callback):
@@ -1179,26 +1199,6 @@ def callback_chapter(callback):
             callback.message.chat.id,
             callback.message.message_id,
         )
-
-
-############        CHECKOUT     CALLBACK        ############
-@bot.callback_query_handler(func=lambda call: call.data == "checkout")
-def callback_checkout(call):
-    for items in user_cart.values():
-        for item_id, values in items.items():
-            id_ = item_id
-            qty = values["quantity"]
-    checkout_link = f"{URL}/checkout/?add-to-cart={id_}&quantity={qty}"
-    markup = quick_markup(
-        {"anvibodycare.com": {"url": checkout_link}},
-        row_width=2,
-    )
-    bot.edit_message_text(
-        "✅ Оформити замовлення",
-        call.message.chat.id,
-        call.message.message_id,
-        reply_markup=markup,
-    )
 
 
 ############              LISTENER               ############
