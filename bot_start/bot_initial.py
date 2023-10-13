@@ -224,6 +224,7 @@ def callback_chapter(callback):
         # item_price = 0
         chapter = catalog_items[item_id]["chapter"]
         product_id = catalog_items[item_id]["product_id"]
+        status = catalog_items[item_id]["status"]
 
         img_caption = InputMediaPhoto(media=item_image, caption=item_name)
         global item_weight_def
@@ -276,11 +277,12 @@ def callback_chapter(callback):
                 f"{item_name}\n"
                 f"• вага: {item_weight_def} гр.\n"
                 f"• {item_packing_def} \n"
+                f"• {status}\n"
                 f"• ціна: {item_price} ₴."
             )
         else:
             # item_price = int(item_price_str.replace(" ₴", ""))
-            text = f"{item_name}\n" f"• ціна: {item_price} ₴."
+            text = f"{item_name}\n • {status}\n • ціна: {item_price} ₴."
 
         img_caption = InputMediaPhoto(media=item_image, caption=text)
         add_to_cart = types.InlineKeyboardButton(
