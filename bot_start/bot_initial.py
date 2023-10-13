@@ -33,11 +33,10 @@ def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("📒 Каталог")
     btn2 = types.KeyboardButton("🛍️ Кошик")
-    btn3 = types.KeyboardButton("👪🏻 Про Нас")
-    btn4 = types.KeyboardButton("📇 Наші контакти")
+    btn3 = types.KeyboardButton("🌿 Про Нас")
+    btn4 = types.KeyboardButton("💌 Наші контакти")
 
-    markup.row(btn1)
-    markup.row(btn2)
+    markup.row(btn1, btn2)
     markup.add(btn3, btn4)
 
     bot.send_message(
@@ -83,7 +82,7 @@ def show_job(message):
 
 
 ############        CONTACTS     HANDLER        ############
-@bot.message_handler(func=lambda message: message.text == "📇 Наші контакти")
+@bot.message_handler(func=lambda message: message.text == "💌 Наші контакти")
 def contacts_handler(message):
     contacts = read_contacts()
     markup = types.ReplyKeyboardMarkup(True, False)
@@ -96,7 +95,7 @@ def contacts_handler(message):
 
 
 ############        ABOUT_US     HANDLER        ############
-@bot.message_handler(func=lambda message: message.text == "👪🏻 Про Нас")
+@bot.message_handler(func=lambda message: message.text == "🌿 Про Нас")
 def about_us_handler(message):
     about = read_about()
     markup = types.ReplyKeyboardMarkup(True, False)
