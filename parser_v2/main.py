@@ -35,7 +35,7 @@ def make_catalog():
                 "product_id": meta.product_id(),
                 "variations": meta.variations(),
                 "description": meta.description(),
-                "description_full": meta.description_full(),
+                "description_short": meta.description_short(),
             }
             indx += 1
     # ./data/catalog.json

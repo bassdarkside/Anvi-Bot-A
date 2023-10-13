@@ -157,7 +157,7 @@ class Item:
         except KeyError:
             pass
 
-    def description(self):
+    def description_short(self):
         soup = self.soup
         description = None
         try:
@@ -167,7 +167,7 @@ class Item:
         except Exception:
             pass
 
-    def description_full(self):
+    def description(self):
         soup = self.soup
         desc = ""
         data = None

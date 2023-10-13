@@ -4,10 +4,12 @@ import schedule
 import threading
 from decouple import config
 from schedule import every, repeat
-from telebot import types, custom_filters, util
+from telebot.util import quick_markup
 from telebot.types import InputMediaPhoto
+from telebot import types, custom_filters, util
 from bot_start.catalog import catalog, read_catalog, read_about, read_contacts
 from parser_v2.main import scrape_url, make_catalog
+from parser_v2.config import URL
 
 TOKEN = config("TOKEN")
 bot = telebot.TeleBot(TOKEN)
@@ -25,20 +27,16 @@ bot_data = {}
 item_weight_def = ""
 item_packing_def = ""
 
-# Reply Buttons
-# regexp="ривіт"
-
 
 @bot.message_handler(commands=["start"])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("📒 Каталог")
     btn2 = types.KeyboardButton("🛍️ Кошик")
-    btn3 = types.KeyboardButton("👪🏻 Про Нас")
-    btn4 = types.KeyboardButton("📇 Наші контакти")
+    btn3 = types.KeyboardButton("🌿 Про Нас")
+    btn4 = types.KeyboardButton("💌 Наші контакти")
 
-    markup.row(btn1)
-    markup.row(btn2)
+    markup.row(btn1, btn2)
     markup.add(btn3, btn4)
 
     bot.send_message(
@@ -49,7 +47,7 @@ def start(message):
     )
 
 
-####### ADMIN COMMANDS #######
+############        ADMIN     HANDLERS        ############
 @bot.message_handler(
     chat_id=[ADMIN],
     commands=["admin"],
@@ -83,8 +81,8 @@ def show_job(message):
     bot.send_message(message.chat.id, str(all_jobs))
 
 
-####### CONTACTS HANDLER #######
-@bot.message_handler(func=lambda message: message.text == "📇 Наші контакти")
+############        CONTACTS     HANDLER        ############
+@bot.message_handler(func=lambda message: message.text == "💌 Наші контакти")
 def contacts_handler(message):
     contacts = read_contacts()
     markup = types.ReplyKeyboardMarkup(True, False)
@@ -96,8 +94,8 @@ def contacts_handler(message):
     )
 
 
-####### ABOUT_US HANDLER #######
-@bot.message_handler(func=lambda message: message.text == "👪🏻 Про Нас")
+############        ABOUT_US     HANDLER        ############
+@bot.message_handler(func=lambda message: message.text == "🌿 Про Нас")
 def about_us_handler(message):
     about = read_about()
     markup = types.ReplyKeyboardMarkup(True, False)
@@ -207,8 +205,7 @@ def callback_chapter(callback):
         chapter = catalog_items[item_id]["chapter"]
         product_id = catalog_items[item_id]["product_id"]
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=item_name)
+        img_caption = InputMediaPhoto(media=item_image, caption=item_name)
         global item_weight_def
         global item_packing_def
 
@@ -226,8 +223,7 @@ def callback_chapter(callback):
             callback_data=f"back_to_chapter_{chapter}",
         )
         description = types.InlineKeyboardButton(
-            "Опис продукту",
-            callback_data=f"{item_id}_description"
+            "Опис продукту", callback_data=f"{item_id}_description"
         )
 
         # change the button for items with variations
@@ -238,37 +234,38 @@ def callback_chapter(callback):
             key_price_dict = {}  # dict with the {key: vario_price}
 
             key_price_dict = {
-                key: details["vario_price"] for key, details in varios.items()}
+                key: details["vario_price"] for key, details in varios.items()
+            }
 
             # find min the key with the min price
             def_key = min(key_price_dict, key=key_price_dict.get)
 
-            product_id = (
-                catalog_items[item_id]["variations"][def_key]["vario_id"]
-            )
-            item_price = (
-                catalog_items[item_id]["variations"][def_key]["vario_price"]
-            )
-            item_weight_def = (
-                catalog_items[item_id]["variations"][def_key]["vario_weight"]
-            )
-            item_packing_def = (
-                catalog_items[item_id]["variations"][def_key]["packing_name"]
-            )
-            text = f"{item_name}\n"\
-                f"• вага: {item_weight_def} гр.\n"\
-                f"• {item_packing_def} \n"\
+            product_id = catalog_items[item_id]["variations"][def_key][
+                "vario_id"
+            ]
+            item_price = catalog_items[item_id]["variations"][def_key][
+                "vario_price"
+            ]
+            item_weight_def = catalog_items[item_id]["variations"][def_key][
+                "vario_weight"
+            ]
+            item_packing_def = catalog_items[item_id]["variations"][def_key][
+                "packing_name"
+            ]
+            text = (
+                f"{item_name}\n"
+                f"• вага: {item_weight_def} гр.\n"
+                f"• {item_packing_def} \n"
                 f"• ціна: {item_price} ₴."
+            )
         else:
             # item_price = int(item_price_str.replace(" ₴", ""))
-            text = f"{item_name}\n"\
-                f"• ціна: {item_price} ₴."
+            text = f"{item_name}\n" f"• ціна: {item_price} ₴."
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=text)
+        img_caption = InputMediaPhoto(media=item_image, caption=text)
         add_to_cart = types.InlineKeyboardButton(
-                "Додати у кошик",
-                callback_data=f"{item_id}--{product_id}_add_to_cart"
+            "Додати у кошик",
+            callback_data=f"{item_id}--{product_id}_add_to_cart",
         )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
@@ -279,10 +276,11 @@ def callback_chapter(callback):
         markup.row(back)
 
         bot.edit_message_media(
-                        img_caption,
-                        callback.message.chat.id,
-                        callback.message.message_id,
-                        reply_markup=markup)
+            img_caption,
+            callback.message.chat.id,
+            callback.message.message_id,
+            reply_markup=markup,
+        )
     # go to item description
     elif callback.data.endswith("_description"):
         item_id = callback.data.replace("_description", "")
@@ -308,7 +306,7 @@ def callback_chapter(callback):
                 )
                 photo_message_id = photo_message.message_id
                 # Store the message_id
-                bot_data[chat_id] = {'last_message_id': photo_message_id}
+                bot_data[chat_id] = {"last_message_id": photo_message_id}
 
                 for description in util.split_string(item_description, 3000):
                     bot.send_message(
@@ -329,11 +327,10 @@ def callback_chapter(callback):
         chat_id = callback.message.chat.id
         product_id = catalog_items[item_id]["product_id"]
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=item_name)
+        img_caption = InputMediaPhoto(media=item_image, caption=item_name)
 
         # Retrieve the message_id from context.user_data
-        photo_message_id = bot_data[chat_id]['last_message_id']
+        photo_message_id = bot_data[chat_id]["last_message_id"]
 
         # check if the item has weight, pacj=king options
         variations = True
@@ -359,38 +356,39 @@ def callback_chapter(callback):
             key_price_dict = {}  # dict with the {key: vario_price}
 
             key_price_dict = {
-                key: details["vario_price"] for key, details in varios.items()}
+                key: details["vario_price"] for key, details in varios.items()
+            }
 
             # find min the key with the min price
             def_key = min(key_price_dict, key=key_price_dict.get)
 
-            product_id = (
-                catalog_items[item_id]["variations"][def_key]["vario_id"]
-            )
-            item_price = (
-                catalog_items[item_id]["variations"][def_key]["vario_price"]
-            )
-            item_weight_def = (
-                catalog_items[item_id]["variations"][def_key]["vario_weight"]
-            )
-            item_packing_def = (
-                catalog_items[item_id]["variations"][def_key]["packing_name"]
-            )
-            text = f"{item_name}\n"\
-                f"• вага: {item_weight_def} гр.\n"\
-                f"• {item_packing_def} \n"\
+            product_id = catalog_items[item_id]["variations"][def_key][
+                "vario_id"
+            ]
+            item_price = catalog_items[item_id]["variations"][def_key][
+                "vario_price"
+            ]
+            item_weight_def = catalog_items[item_id]["variations"][def_key][
+                "vario_weight"
+            ]
+            item_packing_def = catalog_items[item_id]["variations"][def_key][
+                "packing_name"
+            ]
+            text = (
+                f"{item_name}\n"
+                f"• вага: {item_weight_def} гр.\n"
+                f"• {item_packing_def} \n"
                 f"• ціна: {item_price} ₴."
+            )
         else:
             # item_price = int(item_price_str.replace(" ₴", ""))
-            text = f"{item_name}\n"\
-                f"• ціна: {item_price} ₴."
+            text = f"{item_name}\n" f"• ціна: {item_price} ₴."
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=text)
+        img_caption = InputMediaPhoto(media=item_image, caption=text)
 
         add_to_cart = types.InlineKeyboardButton(
-                "Додати у кошик",
-                callback_data=f"{item_id}--{product_id}_add_to_cart"
+            "Додати у кошик",
+            callback_data=f"{item_id}--{product_id}_add_to_cart",
         )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
@@ -401,22 +399,22 @@ def callback_chapter(callback):
         markup.row(back)
 
         bot.delete_message(
-            callback.message.chat.id,
-            callback.message.message_id
+            callback.message.chat.id, callback.message.message_id
         )
         if photo_message_id:
             bot.edit_message_media(
                 media=img_caption,
                 chat_id=chat_id,
                 message_id=photo_message_id,
-                reply_markup=markup
+                reply_markup=markup,
             )
         else:
             bot.edit_message_media(
-                        img_caption,
-                        callback.message.chat.id,
-                        callback.message.message_id,
-                        reply_markup=markup)
+                img_caption,
+                callback.message.chat.id,
+                callback.message.message_id,
+                reply_markup=markup,
+            )
 
     # back item -> chapter
     elif callback.data.startswith("back_to_chapter_"):
@@ -427,8 +425,9 @@ def callback_chapter(callback):
             if chapter_catalog == chapter:
                 items = catalog[chapter]["items"]
                 message = catalog[chapter]["message"]
-                img_caption = InputMediaPhoto(media=chapter_img,
-                                              caption=message)
+                img_caption = InputMediaPhoto(
+                    media=chapter_img, caption=message
+                )
 
                 markup = types.InlineKeyboardMarkup()
                 for item in items:
@@ -443,7 +442,7 @@ def callback_chapter(callback):
                     img_caption,
                     callback.message.chat.id,
                     callback.message.message_id,
-                    reply_markup=markup
+                    reply_markup=markup,
                 )
     # add to cart
     elif callback.data.endswith("_add_to_cart"):
@@ -460,8 +459,7 @@ def callback_chapter(callback):
         item_price = catalog_items[item_id]["price_int"]
         chapter = catalog_items[item_id]["chapter"]
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=item_name)
+        img_caption = InputMediaPhoto(media=item_image, caption=item_name)
 
         # check if the item has weight, packing options
         variations = True
@@ -478,27 +476,28 @@ def callback_chapter(callback):
                 varios = catalog_items[item_id]["variations"]
                 vario_key = ""
                 for key, details in varios.items():
-                    if (details["vario_weight"] == item_weight_def and
-                       details["packing_name"] == item_packing_def):
+                    if (
+                        details["vario_weight"] == item_weight_def
+                        and details["packing_name"] == item_packing_def
+                    ):
                         vario_key = key
 
-                item_price = (
-                    catalog_items[item_id]["variations"][vario_key]
-                    ["vario_price"]
-                )
-                text = f"{item_name}\n"\
-                    f"• вага: {item_weight_def} гр.\n"\
-                    f"• {item_packing_def}\n"\
+                item_price = catalog_items[item_id]["variations"][vario_key][
+                    "vario_price"
+                ]
+                text = (
+                    f"{item_name}\n"
+                    f"• вага: {item_weight_def} гр.\n"
+                    f"• {item_packing_def}\n"
                     f"• ціна: {item_price} ₴"
+                )
             else:
                 # item_price = int(item_price_str.replace(" ₴", ""))
-                text = f"{item_name}\n"\
-                    f"• ціна: {item_price} ₴"
+                text = f"{item_name}\n" f"• ціна: {item_price} ₴"
 
             user_cart[user_id][product_id]["quantity"] += 1
             user_total_sum[user_id] += item_price  # Update the total sum
-            img_caption = InputMediaPhoto(media=item_image,
-                                          caption=text)
+            img_caption = InputMediaPhoto(media=item_image, caption=text)
         # cart doesn't have this product
         else:
             if variations:
@@ -508,49 +507,46 @@ def callback_chapter(callback):
 
                 key_price_dict = {
                     key: details["vario_price"]
-                    for key, details in varios.items()}
+                    for key, details in varios.items()
+                }
 
                 # find min the key with the min price
                 def_key = min(key_price_dict, key=key_price_dict.get)
 
-                item_price = (
-                    catalog_items[item_id]["variations"][def_key]
-                    ["vario_price"]
-                )
-                item_weight_def = (
-                    catalog_items[item_id]["variations"][def_key]
-                    ["vario_weight"]
-                )
-                item_packing_def = (
-                    catalog_items[item_id]["variations"][def_key]
-                    ["packing_name"]
-                )
-                product_id = (
-                    catalog_items[item_id]["variations"][def_key]
-                    ["vario_id"]
-                )
-                text = f"{item_name}\n"\
-                    f"• вага: {item_weight_def} гр.\n"\
-                    f"• {item_packing_def}\n"\
+                item_price = catalog_items[item_id]["variations"][def_key][
+                    "vario_price"
+                ]
+                item_weight_def = catalog_items[item_id]["variations"][
+                    def_key
+                ]["vario_weight"]
+                item_packing_def = catalog_items[item_id]["variations"][
+                    def_key
+                ]["packing_name"]
+                product_id = catalog_items[item_id]["variations"][def_key][
+                    "vario_id"
+                ]
+                text = (
+                    f"{item_name}\n"
+                    f"• вага: {item_weight_def} гр.\n"
+                    f"• {item_packing_def}\n"
                     f"• ціна: {item_price} ₴"
+                )
             # price for item without options
             else:
                 # item_price = int(item_price_str.replace(" ₴", ""))
                 item_weight_def = ""
                 item_packing_def = ""
-                text = text = f"{item_name}\n"\
-                              f"• ціна: {item_price} ₴"
+                text = text = f"{item_name}\n" f"• ціна: {item_price} ₴"
 
-            img_caption = InputMediaPhoto(media=item_image,
-                                          caption=text)
+            img_caption = InputMediaPhoto(media=item_image, caption=text)
 
             user_cart[user_id][product_id] = {
-                    "name": item_name,
-                    "quantity": 1,
-                    "price": item_price,
-                    "weight": item_weight_def,
-                    "packing": item_packing_def
-                    }
+                "name": item_name,
+                "quantity": 1,
+                "price": item_price,
+                "weight": item_weight_def,
+                "packing": item_packing_def,
+            }
 
             user_total_sum[user_id] += item_price  # Update the total sum
 
@@ -563,13 +559,15 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1",
-            callback_data=f"{item_id}--{product_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}--{product_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
             f"{user_cart[user_id][product_id]['quantity']} шт.",
-            callback_data="none")
+            callback_data="none",
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
@@ -577,11 +575,13 @@ def callback_chapter(callback):
         # add the button for options
         if variations:
             weight_opt = types.InlineKeyboardButton(
-                        "Обери вагу",
-                        callback_data=f"{item_id}--{product_id}_weight_opt")
+                "Обери вагу",
+                callback_data=f"{item_id}--{product_id}_weight_opt",
+            )
             packing_opt = types.InlineKeyboardButton(
-                        "Обери пакування",
-                        callback_data=f"{item_id}--{product_id}_packing_opt")
+                "Обери пакування",
+                callback_data=f"{item_id}--{product_id}_packing_opt",
+            )
             markup.row(description)
             markup.row(weight_opt, packing_opt)
             markup.row(remove_1, n_items, add_1)
@@ -589,26 +589,28 @@ def callback_chapter(callback):
             markup.row(back)
 
             photo_message = bot.edit_message_media(
-                        img_caption,
-                        callback.message.chat.id,
-                        callback.message.message_id,
-                        reply_markup=markup)
+                img_caption,
+                callback.message.chat.id,
+                callback.message.message_id,
+                reply_markup=markup,
+            )
             photo_message_id = photo_message.message_id
             # Store the message_id
-            bot_data[chat_id] = {'last_message_id': photo_message_id}
+            bot_data[chat_id] = {"last_message_id": photo_message_id}
         else:
             markup.row(description)
             markup.row(remove_1, n_items, add_1)
             markup.row(sum)
             markup.row(back)
             photo_message = bot.edit_message_media(
-                        img_caption,
-                        callback.message.chat.id,
-                        callback.message.message_id,
-                        reply_markup=markup)
+                img_caption,
+                callback.message.chat.id,
+                callback.message.message_id,
+                reply_markup=markup,
+            )
             photo_message_id = photo_message.message_id
             # Store the message_id
-            bot_data[chat_id] = {'last_message_id': photo_message_id}
+            bot_data[chat_id] = {"last_message_id": photo_message_id}
     # # weight_options message
     elif callback.data.endswith("_weight_opt"):
         item_id_product_id = callback.data.replace("_weight_opt", "")
@@ -622,20 +624,19 @@ def callback_chapter(callback):
         weight_opt_list = []  # list with weight options
 
         weight_opt_list = [
-            details["vario_weight"] for key, details in varios.items()]
+            details["vario_weight"] for key, details in varios.items()
+        ]
         unique_weight = list(set(weight_opt_list))
         unique_weight.sort()
 
         markup = types.InlineKeyboardMarkup()
         for w in unique_weight:
             button = types.InlineKeyboardButton(
-                w,
-                callback_data=f"{item_id}--{product_id}--{w}_weight")
+                w, callback_data=f"{item_id}--{product_id}--{w}_weight"
+            )
             markup.row(button)
         bot.send_message(
-            callback.message.chat.id,
-            "Обери вагу",
-            reply_markup=markup
+            callback.message.chat.id, "Обери вагу", reply_markup=markup
         )
     # # packing_options message
     elif callback.data.endswith("_packing_opt"):
@@ -650,20 +651,19 @@ def callback_chapter(callback):
         packing_opt_list = []  # list with packing options
 
         packing_opt_list = [
-            details["packing_name"] for key, details in varios.items()]
+            details["packing_name"] for key, details in varios.items()
+        ]
         unique_packing = list(set(packing_opt_list))
         unique_packing.sort()
 
         markup = types.InlineKeyboardMarkup()
         for p in unique_packing:
             button = types.InlineKeyboardButton(
-                p,
-                callback_data=f"{item_id}--{product_id}--{p}_packing")
+                p, callback_data=f"{item_id}--{product_id}--{p}_packing"
+            )
             markup.row(button)
         bot.send_message(
-            callback.message.chat.id,
-            "Обери пакування",
-            reply_markup=markup
+            callback.message.chat.id, "Обери пакування", reply_markup=markup
         )
 
     # # weight selection -> upd the "add_to_car screen"
@@ -681,43 +681,43 @@ def callback_chapter(callback):
         item_price = catalog_items[item_id]["price_int"]
         chapter = catalog_items[item_id]["chapter"]
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=item_name)
+        img_caption = InputMediaPhoto(media=item_image, caption=item_name)
         #  find vario_key by weight and packing
         varios = catalog_items[item_id]["variations"]
         # vario_key = ""
         for key, details in varios.items():
-            if (details["vario_weight"] == item_weight_def and
-               details["packing_name"] == item_packing_def):
+            if (
+                details["vario_weight"] == item_weight_def
+                and details["packing_name"] == item_packing_def
+            ):
                 vario_key = key
 
-        item_price = (
-            catalog_items[item_id]["variations"][vario_key]
-            ["vario_price"]
-        )
-        product_id = (
-            catalog_items[item_id]["variations"][vario_key]
-            ["vario_id"]
-        )
+        item_price = catalog_items[item_id]["variations"][vario_key][
+            "vario_price"
+        ]
+        product_id = catalog_items[item_id]["variations"][vario_key][
+            "vario_id"
+        ]
 
         item_price_old = user_cart[user_id][product_id_old]["price"]
         user_total_sum[user_id] -= item_price_old
         del user_cart[user_id][product_id_old]
         user_cart[user_id][product_id] = {
-                    "name": item_name,
-                    "quantity": 1,
-                    "price": item_price,
-                    "weight": item_weight_def,
-                    "packing": item_packing_def
-                    }
+            "name": item_name,
+            "quantity": 1,
+            "price": item_price,
+            "weight": item_weight_def,
+            "packing": item_packing_def,
+        }
         user_total_sum[user_id] += item_price
 
-        text = f"{item_name}\n"\
-            f"• вага: {item_weight_def} гр.\n"\
-            f"• {item_packing_def}\n"\
+        text = (
+            f"{item_name}\n"
+            f"• вага: {item_weight_def} гр.\n"
+            f"• {item_packing_def}\n"
             f"• ціна: {item_price} ₴"
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=text)
+        )
+        img_caption = InputMediaPhoto(media=item_image, caption=text)
 
         markup = types.InlineKeyboardMarkup()
         back = types.InlineKeyboardButton(
@@ -728,24 +728,27 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1",
-            callback_data=f"{item_id}--{product_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}--{product_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
             f"{user_cart[user_id][product_id]['quantity']} шт.",
-            callback_data="none")
+            callback_data="none",
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
 
         # add the button for options
         weight_opt = types.InlineKeyboardButton(
-                    "Обери вагу",
-                    callback_data=f"{item_id}--{product_id}_weight_opt")
+            "Обери вагу", callback_data=f"{item_id}--{product_id}_weight_opt"
+        )
         packing_opt = types.InlineKeyboardButton(
-                    "Обери пакування",
-                    callback_data=f"{item_id}--{product_id}_packing_opt")
+            "Обери пакування",
+            callback_data=f"{item_id}--{product_id}_packing_opt",
+        )
         markup.row(description)
         markup.row(weight_opt, packing_opt)
         markup.row(remove_1, n_items, add_1)
@@ -753,12 +756,10 @@ def callback_chapter(callback):
         markup.row(back)
 
         bot.send_photo(
-                    callback.message.chat.id,
-                    item_image,
-                    text,
-                    reply_markup=markup)
+            callback.message.chat.id, item_image, text, reply_markup=markup
+        )
 
-# # packing selection -> upd the "add_to_car screen"
+    # # packing selection -> upd the "add_to_car screen"
     elif callback.data.endswith("_packing"):
         item_id_product_id_pack = callback.data.replace("_packing", "")
         item_id_product_id_pack_list = item_id_product_id_pack.split("--")
@@ -773,44 +774,44 @@ def callback_chapter(callback):
         item_price = catalog_items[item_id]["price_int"]
         chapter = catalog_items[item_id]["chapter"]
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=item_name)
+        img_caption = InputMediaPhoto(media=item_image, caption=item_name)
         #  find vario_key by weight and packing
         varios = catalog_items[item_id]["variations"]
         vario_key = ""
         for key, details in varios.items():
-            if (details["vario_weight"] == item_weight_def and
-               details["packing_name"] == item_packing_def):
+            if (
+                details["vario_weight"] == item_weight_def
+                and details["packing_name"] == item_packing_def
+            ):
                 vario_key = key
 
-        item_price = (
-            catalog_items[item_id]["variations"][vario_key]
-            ["vario_price"]
-        )
-        product_id = (
-            catalog_items[item_id]["variations"][vario_key]
-            ["vario_id"]
-        )
+        item_price = catalog_items[item_id]["variations"][vario_key][
+            "vario_price"
+        ]
+        product_id = catalog_items[item_id]["variations"][vario_key][
+            "vario_id"
+        ]
 
         item_price_old = user_cart[user_id][product_id_old]["price"]
         user_total_sum[user_id] -= item_price_old
         del user_cart[user_id][product_id_old]
 
         user_cart[user_id][product_id] = {
-                    "name": item_name,
-                    "quantity": 1,
-                    "price": item_price,
-                    "weight": item_weight_def,
-                    "packing": item_packing_def
-                    }
+            "name": item_name,
+            "quantity": 1,
+            "price": item_price,
+            "weight": item_weight_def,
+            "packing": item_packing_def,
+        }
         user_total_sum[user_id] += item_price
 
-        text = f"{item_name}\n"\
-            f"• вага: {item_weight_def} гр.\n"\
-            f"• {item_packing_def}\n"\
+        text = (
+            f"{item_name}\n"
+            f"• вага: {item_weight_def} гр.\n"
+            f"• {item_packing_def}\n"
             f"• ціна: {item_price} ₴"
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=text)
+        )
+        img_caption = InputMediaPhoto(media=item_image, caption=text)
 
         markup = types.InlineKeyboardMarkup()
         back = types.InlineKeyboardButton(
@@ -821,24 +822,27 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1",
-            callback_data=f"{item_id}--{product_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}--{product_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
             f"{user_cart[user_id][product_id]['quantity']} шт.",
-            callback_data="none")
+            callback_data="none",
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
 
         # add the button for options
         weight_opt = types.InlineKeyboardButton(
-                    "Обери вагу",
-                    callback_data=f"{item_id}--{product_id}_weight_opt")
+            "Обери вагу", callback_data=f"{item_id}--{product_id}_weight_opt"
+        )
         packing_opt = types.InlineKeyboardButton(
-                    "Обери пакування",
-                    callback_data=f"{item_id}--{product_id}_packing_opt")
+            "Обери пакування",
+            callback_data=f"{item_id}--{product_id}_packing_opt",
+        )
         markup.row(description)
         markup.row(weight_opt, packing_opt)
         markup.row(remove_1, n_items, add_1)
@@ -846,10 +850,8 @@ def callback_chapter(callback):
         markup.row(back)
 
         bot.send_photo(
-                    callback.message.chat.id,
-                    item_image,
-                    text,
-                    reply_markup=markup)
+            callback.message.chat.id, item_image, text, reply_markup=markup
+        )
 
     # remove_1_from_cart
     elif callback.data.endswith("_remove_1_from_cart"):
@@ -874,16 +876,16 @@ def callback_chapter(callback):
             item_weight_def = user_cart[user_id][product_id]["weight"]
             item_packing_def = user_cart[user_id][product_id]["packing"]
 
-            text = f"{item_name}\n"\
-                f"• вага: {item_weight_def} гр.\n"\
-                f"• {item_packing_def}\n"\
+            text = (
+                f"{item_name}\n"
+                f"• вага: {item_weight_def} гр.\n"
+                f"• {item_packing_def}\n"
                 f"• ціна: {item_price} ₴"
+            )
         else:
-            text = f"{item_name}\n"\
-                        f"• ціна: {item_price} ₴"
+            text = f"{item_name}\n" f"• ціна: {item_price} ₴"
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=text)
+        img_caption = InputMediaPhoto(media=item_image, caption=text)
 
         user_cart[user_id][product_id]["quantity"] -= 1
         user_total_sum[user_id] -= item_price  # Update the total sum
@@ -896,13 +898,15 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1",
-            callback_data=f"{item_id}--{product_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}--{product_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
             f"{user_cart[user_id][product_id]['quantity']} шт.",
-            callback_data="none")
+            callback_data="none",
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
@@ -910,12 +914,14 @@ def callback_chapter(callback):
         if variations:
             # add the button for options
             weight_opt = types.InlineKeyboardButton(
-                    "Обери вагу",
-                    callback_data=f"{item_id}--{product_id}_weight_opt")
+                "Обери вагу",
+                callback_data=f"{item_id}--{product_id}_weight_opt",
+            )
             packing_opt = types.InlineKeyboardButton(
-                    "Обери пакування",
-                    callback_data=f"{item_id}--{product_id}_packing_opt")
-            if user_cart[user_id][product_id]['quantity'] == 0:
+                "Обери пакування",
+                callback_data=f"{item_id}--{product_id}_packing_opt",
+            )
+            if user_cart[user_id][product_id]["quantity"] == 0:
                 markup.row(description)
                 markup.row(weight_opt, packing_opt)
                 markup.row(n_items, add_1)
@@ -929,13 +935,14 @@ def callback_chapter(callback):
                 markup.row(back)
 
             bot.edit_message_media(
-                            img_caption,
-                            callback.message.chat.id,
-                            callback.message.message_id,
-                            reply_markup=markup)
+                img_caption,
+                callback.message.chat.id,
+                callback.message.message_id,
+                reply_markup=markup,
+            )
 
         else:
-            if user_cart[user_id][product_id]['quantity'] == 0:
+            if user_cart[user_id][product_id]["quantity"] == 0:
                 markup.row(description)
                 markup.row(n_items, add_1)
                 markup.row(sum)
@@ -946,10 +953,11 @@ def callback_chapter(callback):
                 markup.row(sum)
                 markup.row(back)
             bot.edit_message_media(
-                            img_caption,
-                            callback.message.chat.id,
-                            callback.message.message_id,
-                            reply_markup=markup)
+                img_caption,
+                callback.message.chat.id,
+                callback.message.message_id,
+                reply_markup=markup,
+            )
     # _add_1_to_cart"
     elif callback.data.endswith("_add_1_to_cart"):
         item_id_product_id = callback.data.replace("_add_1_to_cart", "")
@@ -974,16 +982,16 @@ def callback_chapter(callback):
             item_weight_def = user_cart[user_id][product_id]["weight"]
             item_packing_def = user_cart[user_id][product_id]["packing"]
 
-            text = f"{item_name}\n"\
-                f"• вага: {item_weight_def} гр.\n"\
-                f"• {item_packing_def}\n"\
+            text = (
+                f"{item_name}\n"
+                f"• вага: {item_weight_def} гр.\n"
+                f"• {item_packing_def}\n"
                 f"• ціна: {item_price} ₴"
+            )
         else:
-            text = f"{item_name}\n"\
-                        f"• ціна: {item_price} ₴"
+            text = f"{item_name}\n" f"• ціна: {item_price} ₴"
 
-        img_caption = InputMediaPhoto(media=item_image,
-                                      caption=text)
+        img_caption = InputMediaPhoto(media=item_image, caption=text)
         user_cart[user_id][product_id]["quantity"] += 1
         user_total_sum[user_id] += item_price  # Update the total sum
         markup = types.InlineKeyboardMarkup()
@@ -995,14 +1003,15 @@ def callback_chapter(callback):
             "Опис продукту", callback_data=f"{item_id}_description"
         )
         remove_1 = types.InlineKeyboardButton(
-            "✏️-1",
-            callback_data=f"{item_id}--{product_id}_remove_1_from_cart")
+            "✏️-1", callback_data=f"{item_id}--{product_id}_remove_1_from_cart"
+        )
         n_items = types.InlineKeyboardButton(
             f"{user_cart[user_id][product_id]['quantity']} шт.",
-            callback_data="none")
+            callback_data="none",
+        )
         add_1 = types.InlineKeyboardButton(
-            "✏️+1",
-            callback_data=f"{item_id}--{product_id}_add_1_to_cart")
+            "✏️+1", callback_data=f"{item_id}--{product_id}_add_1_to_cart"
+        )
         sum = types.InlineKeyboardButton(
             f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
         )
@@ -1010,11 +1019,13 @@ def callback_chapter(callback):
         if variations:
             # add the button for options
             weight_opt = types.InlineKeyboardButton(
-                    "Обери вагу",
-                    callback_data=f"{item_id}--{product_id}_weight_opt")
+                "Обери вагу",
+                callback_data=f"{item_id}--{product_id}_weight_opt",
+            )
             packing_opt = types.InlineKeyboardButton(
-                    "Обери пакування",
-                    callback_data=f"{item_id}--{product_id}_packing_opt")
+                "Обери пакування",
+                callback_data=f"{item_id}--{product_id}_packing_opt",
+            )
             markup.row(description)
             markup.row(weight_opt, packing_opt)
             markup.row(remove_1, n_items, add_1)
@@ -1022,10 +1033,11 @@ def callback_chapter(callback):
             markup.row(back)
 
             bot.edit_message_media(
-                            img_caption,
-                            callback.message.chat.id,
-                            callback.message.message_id,
-                            reply_markup=markup)
+                img_caption,
+                callback.message.chat.id,
+                callback.message.message_id,
+                reply_markup=markup,
+            )
         else:
             markup.row(description)
             markup.row(remove_1, n_items, add_1)
@@ -1033,10 +1045,11 @@ def callback_chapter(callback):
             markup.row(back)
 
             bot.edit_message_media(
-                            img_caption,
-                            callback.message.chat.id,
-                            callback.message.message_id,
-                            reply_markup=markup)
+                img_caption,
+                callback.message.chat.id,
+                callback.message.message_id,
+                reply_markup=markup,
+            )
     # # cart edit
     elif callback.data == "cart_edit":
         user_id = callback.from_user.id
@@ -1044,27 +1057,31 @@ def callback_chapter(callback):
         markup = types.InlineKeyboardMarkup()
         message_cart_edit = "Редагування"
         for product_id, details in items.items():
-            item_name = details['name']
+            item_name = details["name"]
             if len(user_cart) > 0:
-                name = types.InlineKeyboardButton(item_name,
-                                                  callback_data=product_id)
+                name = types.InlineKeyboardButton(
+                    item_name, callback_data=product_id
+                )
                 remove_1 = types.InlineKeyboardButton(
                     "✏️-1",
-                    callback_data=f"{product_id}_remove_1_from_cart_incart")
+                    callback_data=f"{product_id}_remove_1_from_cart_incart",
+                )
                 n_items = types.InlineKeyboardButton(
                     f"{user_cart[user_id][product_id]['quantity']} шт.",
-                    callback_data="none")
+                    callback_data="none",
+                )
                 add_1 = types.InlineKeyboardButton(
-                    "✏️+1",
-                    callback_data=f"{product_id}_add_1_to_cart_incart")
+                    "✏️+1", callback_data=f"{product_id}_add_1_to_cart_incart"
+                )
                 markup.row(name)
                 markup.row(remove_1, n_items, add_1)
         sum = types.InlineKeyboardButton(
-                f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum")
+            f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
+        )
         markup.row(sum)
-        bot.send_message(callback.message.chat.id,
-                         message_cart_edit,
-                         reply_markup=markup)
+        bot.send_message(
+            callback.message.chat.id, message_cart_edit, reply_markup=markup
+        )
     # # _remove_1_from_cart_incart - cart edit
     elif callback.data.endswith("_remove_1_from_cart_incart"):
         product_id = callback.data.replace("_remove_1_from_cart_incart", "")
@@ -1079,30 +1096,36 @@ def callback_chapter(callback):
         markup = types.InlineKeyboardMarkup()
         message_cart_edit = "Редагування"
         for product_id, details in items.items():
-            item_name = details['name']
-            if user_cart[user_id][product_id]['quantity'] > 0:
-                name = types.InlineKeyboardButton(item_name,
-                                                  callback_data=product_id)
+            item_name = details["name"]
+            if user_cart[user_id][product_id]["quantity"] > 0:
+                name = types.InlineKeyboardButton(
+                    item_name, callback_data=product_id
+                )
                 remove_1 = types.InlineKeyboardButton(
                     "✏️-1",
-                    callback_data=f"{product_id}_remove_1_from_cart_incart")
+                    callback_data=f"{product_id}_remove_1_from_cart_incart",
+                )
                 n_items = types.InlineKeyboardButton(
                     f"{user_cart[user_id][product_id]['quantity']} шт.",
-                    callback_data="none")
+                    callback_data="none",
+                )
                 add_1 = types.InlineKeyboardButton(
-                    "✏️+1",
-                    callback_data=f"{product_id}_add_1_to_cart_incart")
+                    "✏️+1", callback_data=f"{product_id}_add_1_to_cart_incart"
+                )
 
                 markup.row(name)
                 markup.row(remove_1, n_items, add_1)
         sum = types.InlineKeyboardButton(
-                f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum")
+            f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
+        )
         markup.row(sum)
 
-        bot.edit_message_text(message_cart_edit,
-                              callback.message.chat.id,
-                              callback.message.message_id,
-                              reply_markup=markup)
+        bot.edit_message_text(
+            message_cart_edit,
+            callback.message.chat.id,
+            callback.message.message_id,
+            reply_markup=markup,
+        )
 
     # #_add_1_to_cart_incart - cart edit
     elif callback.data.endswith("_add_1_to_cart_incart"):
@@ -1116,28 +1139,34 @@ def callback_chapter(callback):
         markup = types.InlineKeyboardMarkup()
         message_cart_edit = "Редагування"
         for product_id, details in items.items():
-            item_name = details['name']
-            if user_cart[user_id][product_id]['quantity'] > 0:
-                name = types.InlineKeyboardButton(item_name,
-                                                  callback_data=product_id)
+            item_name = details["name"]
+            if user_cart[user_id][product_id]["quantity"] > 0:
+                name = types.InlineKeyboardButton(
+                    item_name, callback_data=product_id
+                )
                 remove_1 = types.InlineKeyboardButton(
                     "✏️-1",
-                    callback_data=f"{product_id}_remove_1_from_cart_incart")
+                    callback_data=f"{product_id}_remove_1_from_cart_incart",
+                )
                 n_items = types.InlineKeyboardButton(
                     f"{user_cart[user_id][product_id]['quantity']} шт.",
-                    callback_data="none")
+                    callback_data="none",
+                )
                 add_1 = types.InlineKeyboardButton(
-                    "✏️+1",
-                    callback_data=f"{product_id}_add_1_to_cart_incart")
+                    "✏️+1", callback_data=f"{product_id}_add_1_to_cart_incart"
+                )
                 markup.row(name)
                 markup.row(remove_1, n_items, add_1)
         sum = types.InlineKeyboardButton(
-                f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum")
+            f"🛍️ {user_total_sum[user_id]} ₴", callback_data="sum"
+        )
         markup.row(sum)
-        bot.edit_message_text(message_cart_edit,
-                              callback.message.chat.id,
-                              callback.message.message_id,
-                              reply_markup=markup)
+        bot.edit_message_text(
+            message_cart_edit,
+            callback.message.chat.id,
+            callback.message.message_id,
+            reply_markup=markup,
+        )
     # empty cart
     elif callback.data == "cart_empty":
         # Remove all items from the user's cart
@@ -1145,11 +1174,34 @@ def callback_chapter(callback):
         user_total_sum[callback.from_user.id] = 0
         bot.answer_callback_query(callback.id, "Товари видалено 🫡")
         # Optionally, update the cart message to reflect the empty cart
-        bot.edit_message_text("Кошик порожній 🍃",
-                              callback.message.chat.id,
-                              callback.message.message_id)
+        bot.edit_message_text(
+            "Кошик порожній 🍃",
+            callback.message.chat.id,
+            callback.message.message_id,
+        )
 
 
+############        CHECKOUT     CALLBACK        ############
+@bot.callback_query_handler(func=lambda call: call.data == "checkout")
+def callback_checkout(call):
+    for items in user_cart.values():
+        for item_id, values in items.items():
+            id_ = item_id
+            qty = values["quantity"]
+    checkout_link = f"{URL}/checkout/?add-to-cart={id_}&quantity={qty}"
+    markup = quick_markup(
+        {"anvibodycare.com": {"url": checkout_link}},
+        row_width=2,
+    )
+    bot.edit_message_text(
+        "✅ Оформити замовлення",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=markup,
+    )
+
+
+############              LISTENER               ############
 def listener(messages):
     for m in messages:
         bot.send_message(
@@ -1158,6 +1210,7 @@ def listener(messages):
         )
 
 
+############              SCHEDULE               ############
 @repeat(every().day.at(time_str="06:00", tz="Europe/Kyiv"))
 def update_catalog_every_day():
     global catalog_items
