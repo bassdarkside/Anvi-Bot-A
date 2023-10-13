@@ -7,6 +7,8 @@ scrape = Scrape()
 
 def scrape_url():
     scrape.urls()
+    scrape.about()
+    scrape.contacts()
     scrape.products_urls()
 
 

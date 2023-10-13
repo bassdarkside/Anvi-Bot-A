@@ -2,9 +2,11 @@ from fake_useragent import UserAgent
 from fake_useragent import FakeUserAgentError
 from pathlib import Path
 
+ABOUT = "about.json"
 PAGES = "pages.json"
+ITEMS = "items.json"
 CATALOG = "catalog.json"
-ITEMS = "item_pages.json"
+CONTACTS = "contacts.json"
 
 URL = "https://anvibodycare.com/"
 

@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from parser_v2.config import CATALOG
+from parser_v2.config import CATALOG, ABOUT, CONTACTS
 
 PATH = Path(__file__).parent.parent.joinpath("parser_v2/data")
 
@@ -36,6 +36,18 @@ catalog = {
 }
 
 
+def read_about():
+    with open(f"{PATH}/{ABOUT}") as json_file:
+        about = json.load(json_file)
+    return about
+
+
+def read_contacts():
+    with open(f"{PATH}/{CONTACTS}") as json_file:
+        contacts = json.load(json_file)
+    return contacts
+
+
 def read_catalog():
     with open(f"{PATH}/{CATALOG}") as json_file:
         data = json.load(json_file)
@@ -43,4 +55,6 @@ def read_catalog():
 
 
 if __name__ == "__main__":
+    read_about()
+    read_contacts()
     read_catalog()

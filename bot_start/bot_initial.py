@@ -1,11 +1,11 @@
 import time
 import telebot
-import threading
 import schedule
+import threading
 from decouple import config
 from schedule import every, repeat
 from telebot import types, custom_filters, util
-from bot_start.catalog import catalog, read_catalog
+from bot_start.catalog import catalog, read_catalog, read_about, read_contacts
 from parser_v2.main import scrape_url, make_catalog
 
 TOKEN = config("TOKEN")
@@ -26,10 +26,12 @@ def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     btn1 = types.KeyboardButton("📒 Каталог")
     btn2 = types.KeyboardButton("🛍️ Кошик")
-    btn3 = types.KeyboardButton("🥑 Корисності")
+    btn3 = types.KeyboardButton("👪🏻 Про Нас")
+    btn4 = types.KeyboardButton("📇 Наші контакти")
 
-    markup.row(btn1, btn2)
-    markup.add(btn3)
+    markup.row(btn1)
+    markup.row(btn2)
+    markup.add(btn3, btn4)
 
     bot.send_message(
         message.chat.id,
@@ -39,6 +41,7 @@ def start(message):
     )
 
 
+####### ADMIN COMMANDS #######
 @bot.message_handler(
     chat_id=[ADMIN],
     commands=["admin"],
@@ -70,6 +73,32 @@ def manual_upd(message):
 def show_job(message):
     all_jobs = schedule.get_jobs()
     bot.send_message(message.chat.id, str(all_jobs))
+
+
+####### CONTACTS HANDLER #######
+@bot.message_handler(func=lambda message: message.text == "📇 Наші контакти")
+def contacts_handler(message):
+    contacts = read_contacts()
+    markup = types.ReplyKeyboardMarkup(True, False)
+    bot.send_message(
+        message.chat.id,
+        text=contacts,
+        parse_mode="HTML",
+        reply_markup=markup,
+    )
+
+
+####### ABOUT_US HANDLER #######
+@bot.message_handler(func=lambda message: message.text == "👪🏻 Про Нас")
+def about_us_handler(message):
+    about = read_about()
+    markup = types.ReplyKeyboardMarkup(True, False)
+    bot.send_message(
+        message.chat.id,
+        text=about,
+        parse_mode="HTML",
+        reply_markup=markup,
+    )
 
 
 # Reply on Catalog button click

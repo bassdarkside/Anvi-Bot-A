@@ -5,8 +5,10 @@ from bs4 import BeautifulSoup
 
 from parser_v2.config import (
     DATAPATH,
+    CONTACTS,
     HEADERS,
     ITEMS,
+    ABOUT,
     PAGES,
     CLASS,
     DESC,
@@ -45,13 +47,13 @@ class Scrape:
             link = link.get("href")
             if "category" in link:
                 category.append(link)
-            if "faq" in link:
-                faq = link
+            if "kontakty" in link:
+                contacts = link
             if "about" in link:
                 about = link
         self.links = {
-            "faq": faq,
             "about": about,
+            "contacts": contacts,
             "categories": category,
         }
         if write:
@@ -84,6 +86,31 @@ class Scrape:
         if write:
             self.write_data(self.category_items, ITEMS)
         return self.category_items
+
+    def contacts(self):
+        contacts = ""
+        head = self.soup(self.links["contacts"]).select("h3")
+        body = self.soup(self.links["contacts"]).select("h3 ~ p")
+        for i in range(len(body)):
+            contacts += head[i].getText() + "\n" + body[i].getText() + "\n\n"
+        self.write_data(contacts, CONTACTS)
+        return contacts
+
+    def about(self):
+        soup = self.soup(self.links["about"])
+        header = soup.select("h2[class='MW5IWV']")
+        soup = soup.select("p[class='MW5IWV']")
+        about = header[0].getText() + "\n\n"
+        for text in soup[:8]:
+            about += text.getText()
+        about += "\n\n"
+        for text2 in soup[8:12]:
+            about += text2.getText()
+        about += "\n\n" + header[1].getText() + "\n\n"
+        for text2 in soup[12:]:
+            about += text2.getText()
+        self.write_data(about, ABOUT)
+        return about
 
 
 class Item:
