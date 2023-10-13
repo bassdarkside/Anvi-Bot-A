@@ -5,8 +5,8 @@ import threading
 from decouple import config
 from schedule import every, repeat
 from telebot import types, custom_filters, util
-from bot_start.catalog import catalog, read_catalog, read_about, read_contacts
 from telebot.types import InputMediaPhoto
+from bot_start.catalog import catalog, read_catalog, read_about, read_contacts
 from parser_v2.main import scrape_url, make_catalog
 
 TOKEN = config("TOKEN")
