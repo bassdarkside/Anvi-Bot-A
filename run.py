@@ -6,5 +6,5 @@ from bot_start.bot_initial import bot_run
 if __name__ == "__main__":
     scrape_url()
     make_catalog()
-    # start_logging()
+    start_logging()
     bot_run()
