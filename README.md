@@ -29,6 +29,11 @@ The `.env.txt` example file is located in the `bot_start` directory.
 #### after that you can use command:
     /admin
 
+### Admin can check current update data schedule whith command  :
+    /status  
+
+### Or manual update only `catalog.json` whith command:
+    /update
 ## Start the bot   
 
 File `run.py` starting parser and bot:
@@ -36,10 +41,21 @@ File `run.py` starting parser and bot:
 python run.py
 ```
 
-### The catalog is updated once a day at `06:00` Kyiv time
+### All data is updated once a day at `06:00` Kyiv time
 
 
 ## Change log
--    Add variations items for "Hair" category
--    Add "About" and "Contacts" buttons  
-- ...
+
+
+Add logging
+
+---
+Redirect to checkout page
+
+---   
+Add variations items for "Hair" category
+
+---
+Add "About" and "Contacts" buttons  
+
+...
