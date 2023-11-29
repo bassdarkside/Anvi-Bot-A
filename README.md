@@ -44,10 +44,10 @@ python run.py
 
 ## In Telegram Bot
 
-### Admin can check current update data schedule whith command  :
+### Admin can check current update data schedule with command  :
     /status  
 
-### Start manual update only `catalog.json` whith command:
+### Start manual update only `catalog.json` with command:
     /update
 ### Send command to get description:
     /admin
