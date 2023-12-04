@@ -159,3 +159,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 .DS_Store
+._.DS_Store
+bot_1.py
+parser_v2/data/
+run_anvi.sh
+linux.code-workspace
+.anvi_venv/
